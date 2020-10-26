@@ -1,5 +1,5 @@
-from casbin import log
 from casbin.rbac import RoleManager
+import logging
 
 
 class RoleManager(RoleManager):
@@ -8,7 +8,8 @@ class RoleManager(RoleManager):
     all_roles = dict()
     max_hierarchy_level = 0
 
-    def __init__(self, max_hierarchy_level):
+    def __init__(self, max_hierarchy_level, logger=None):
+        self.logger = logger if logger else logging.getLogger()
         self.all_roles = dict()
         self.max_hierarchy_level = max_hierarchy_level
 
@@ -115,8 +116,7 @@ class RoleManager(RoleManager):
             text = role.to_string()
             if text:
                 line.append(text)
-
-        log.log_print(", ".join(line))
+        self.logger.info(", ".join(line))
 
 
 class Role:

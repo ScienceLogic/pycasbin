@@ -3,11 +3,12 @@ import os
 from unittest import TestCase
 
 
-def get_enforcer(model=None, adapter=None, enable_log=False):
+def get_enforcer(model=None, adapter=None, enable_log=False, logger=None):
     return casbin.Enforcer(
         model,
         adapter,
         enable_log,
+        logger=logger
     )
 
 
@@ -157,8 +158,6 @@ class TestConfig(TestCase):
 
     def test_enforce_abac_log_enabled(self):
         e = get_enforcer(get_examples("abac_model.conf"), enable_log=True)
-        e.enable_log(True)
-
         sub = 'alice'
         obj = {'Owner': 'alice', 'id': 'data1'}
         self.assertTrue(e.enforce(sub, obj, 'write'))

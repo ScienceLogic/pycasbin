@@ -1,6 +1,7 @@
 from casbin.management_enforcer import ManagementEnforcer
 from casbin.util import join_slice, set_subtract
 
+
 class Enforcer(ManagementEnforcer):
     """
         Enforcer = ManagementEnforcer + RBAC_API + RBAC_WITH_DOMAIN_API

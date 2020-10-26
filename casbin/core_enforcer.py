@@ -1,9 +1,9 @@
-from casbin import log
 from casbin.persist.adapters import FileAdapter
 from casbin.model import Model, FunctionMap
 from casbin.rbac import default_role_manager
 from casbin.util import generate_g_function, SimpleEval
 from casbin.effect import DefaultEffector, Effector
+import logging
 
 
 class CoreEnforcer:
@@ -22,8 +22,15 @@ class CoreEnforcer:
     auto_save = False
     auto_build_role_links = False
 
-    def __init__(self, model=None, adapter=None, enable_log=False):
-        self.enable_log(enable_log)
+    def __init__(self, model=None, adapter=None, enable_log=False, logger=None):
+        """
+        Args:
+            model:
+            adapter:
+            enable_log: kept to maintain backwards compatibility
+            logger: logging object from a parent app if needed
+        """
+        self.logger = logger if logger else logging.getLogger()
         if isinstance(model, str):
             if isinstance(adapter, str):
                 self.init_with_file(model, adapter)
@@ -63,7 +70,7 @@ class CoreEnforcer:
             self.load_policy()
 
     def _initialize(self):
-        self.rm = default_role_manager.RoleManager(10)
+        self.rm = default_role_manager.RoleManager(10, self.logger)
         self.eft = DefaultEffector()
         self.watcher = None
 
@@ -71,11 +78,10 @@ class CoreEnforcer:
         self.auto_save = True
         self.auto_build_role_links = True
 
-    @staticmethod
-    def new_model(path="", text=""):
+    def new_model(self, path="", text=""):
         """creates a model."""
 
-        m = Model()
+        m = Model(self.logger)
         if len(path) > 0:
             m.load_model(path)
         else:
@@ -179,9 +185,8 @@ class CoreEnforcer:
         self.enabled = enabled
 
     def enable_log(self, enable):
-        """changes whether Casbin will log messages to the Logger."""
-
-        log.get_logger().enable_log(enable)
+        """ Needs to be deleted, just kept for backwards compatibility """
+        pass
 
     def enable_auto_save(self, auto_save):
         """controls whether to save a policy rule automatically to the adapter when it is added or removed."""
@@ -286,12 +291,15 @@ class CoreEnforcer:
         result = self.eft.merge_effects(self.model.model["e"]["e"].value, policy_effects, matcher_results)
 
         # Log request.
-        if log.get_logger().is_enabled():
-            req_str = "Request: "
-            req_str = req_str + ", ".join([str(v) for v in rvals])
 
-            req_str = req_str + " ---> %s" % result
-            log.log_print(req_str)
+        req_str = "Request: "
+        req_str = req_str + ", ".join([str(v) for v in rvals])
+
+        req_str = req_str + " ---> %s" % result
+        if result:
+            self.logger.info(req_str)
+        else:
+            self.logger.debug(req_str)
 
         return result
 
